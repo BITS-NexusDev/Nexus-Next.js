@@ -124,113 +124,36 @@ const compressImage = (base64String: string, maxWidth = 800): Promise<string> =>
 export default function OnboardingPage() {
   const router = useRouter()
   const { toast } = useToast()
-  const [currentUser, setCurrentUser] = useState<any>(null)
+  const [currentUser, setCurrentUser] = useState<User | null>(null)
   const [step, setStep] = useState(1)
-  const [userType, setUserType] = useState<"student" | "startup" | "">("")
+  const [userType, setUserType] = useState<"student" | "startup">("student")
+  const [studentData, setStudentData] = useState<Partial<StudentData>>({
+    interests: []
+  })
+  const [startupData, setStartupData] = useState<Partial<StartupData>>({})
+  const [startupStep, setStartupStep] = useState(1)
   const [isLoading, setIsLoading] = useState(false)
 
-  // Student specific fields
-  const [studentData, setStudentData] = useState({
-    full_name: "",
-    birth_year: "",
-    id_number: "",
-    campus: "",
-    btech_branch: "",
-    msc_branch: "",
-    minor_degree: "",
-    personal_mail_id: "",
-    whatsapp_number: "",
-    linkedin_profile_link: "",
-    portfolio_link: "",
-    resume_url: "",
-    profile_photo: "", // Will store base64 image
-    interests: [] as string[], // Changed to array
-  })
-
-  // Startup specific fields
-  const [startupData, setStartupData] = useState({
-    official_name: "",
-    website_link: "",
-    year_of_incorporation: "",
-    location_city: "",
-    logo_image: "", // Will store base64 image
-    summary: "",
-    domain: "",
-    contact_mail: "",
-    contact_number: "",
-    founders_name: "",
-    founders_birth_year: "",
-    founders_email: "",
-    founders_whatsapp: "",
-    founders_linkedin: "",
-  })
-
-  const [startupStep, setStartupStep] = useState(1) // 1 for company details, 2 for founder details
-
-  // Load saved data from localStorage on component mount
   useEffect(() => {
-    const savedStep = localStorage.getItem("onboarding_step")
-    const savedUserType = localStorage.getItem("onboarding_userType")
-    const savedStartupData = localStorage.getItem("onboarding_startupData")
-    const savedStartupStep = localStorage.getItem("onboarding_startupStep")
-
-    if (savedStep) setStep(parseInt(savedStep))
-    if (savedUserType) setUserType(savedUserType as "student" | "startup")
-    if (savedStartupData) setStartupData(JSON.parse(savedStartupData))
-    if (savedStartupStep) setStartupStep(parseInt(savedStartupStep))
-  }, [])
-
-  // Save data to localStorage whenever it changes
-  useEffect(() => {
-    localStorage.setItem("onboarding_step", step.toString())
-    localStorage.setItem("onboarding_userType", userType)
-    localStorage.setItem("onboarding_startupData", JSON.stringify(startupData))
-    localStorage.setItem("onboarding_startupStep", startupStep.toString())
-  }, [step, userType, startupData, startupStep])
-
-  useEffect(() => {
-    // Get current user from local storage
-    const user = localStorage.getItem("currentUser")
-    if (user) {
-      const parsedUser = JSON.parse(user)
-      setCurrentUser(parsedUser)
-
-      // Check if user already has a profile
-      if (parsedUser.onboardingComplete) {
-        toast({
-          title: "Profile already exists",
-          description: "You have already completed the onboarding process.",
-          variant: "destructive",
-        })
-        // Redirect to appropriate dashboard based on user type
-        router.push(parsedUser.userType === "student" ? "/dashboard/student" : "/dashboard/startup")
-        return
-      }
-    } else {
-      // Redirect to sign in if no user is found
+    const user = JSON.parse(localStorage.getItem("currentUser") || "null")
+    if (!user) {
       router.push("/auth/signin")
-    }
-  }, [router, toast])
-
-  const handleUserTypeSelection = (type: "student" | "startup") => {
-    // Check if user already has a profile
-    if (currentUser?.onboardingComplete) {
-      toast({
-        title: "Profile already exists",
-        description: "You have already completed the onboarding process.",
-        variant: "destructive",
-      })
-      // Redirect to appropriate dashboard based on user type
-      router.push(currentUser.userType === "student" ? "/dashboard/student" : "/dashboard/startup")
       return
     }
+    setCurrentUser(user)
+    setUserType(user.userType)
+    setStep(2) // Skip user type selection since we already have it
 
-    setUserType(type)
-    setStep(2)
-    // Clear any existing onboarding data when selecting user type
-    localStorage.removeItem("onboarding_startupData")
-    localStorage.removeItem("onboarding_startupStep")
-  }
+    // Load any saved onboarding data
+    const savedStartupData = localStorage.getItem("onboarding_startupData")
+    const savedStartupStep = localStorage.getItem("onboarding_startupStep")
+    if (savedStartupData) {
+      setStartupData(JSON.parse(savedStartupData))
+    }
+    if (savedStartupStep) {
+      setStartupStep(parseInt(savedStartupStep))
+    }
+  }, [router])
 
   const handleStudentDataChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
@@ -709,7 +632,7 @@ export default function OnboardingPage() {
               <Button
                 variant="outline"
                 className="flex h-24 flex-col items-center justify-center gap-2 p-6"
-                onClick={() => handleUserTypeSelection("student")}
+                onClick={() => setUserType("student")}
               >
                 <GraduationCap className="h-8 w-8" />
                 <span>Student</span>
@@ -717,7 +640,7 @@ export default function OnboardingPage() {
               <Button
                 variant="outline"
                 className="flex h-24 flex-col items-center justify-center gap-2 p-6"
-                onClick={() => handleUserTypeSelection("startup")}
+                onClick={() => setUserType("startup")}
               >
                 <Briefcase className="h-8 w-8" />
                 <span>Startup</span>

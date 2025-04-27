@@ -17,9 +17,6 @@ export function validateUser(user: Partial<User>): void {
   if (!user.userType || !['student', 'startup'].includes(user.userType)) {
     throw new ValidationError('Invalid user type')
   }
-  if (!user.name || user.name.trim().length === 0) {
-    throw new ValidationError('Name is required')
-  }
 }
 
 export function validateInternship(internship: Partial<Internship>): void {

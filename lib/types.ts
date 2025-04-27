@@ -8,7 +8,6 @@ export interface User extends BaseEntity {
   email: string;
   password: string;
   userType: 'student' | 'startup';
-  name: string;
   onboardingComplete: boolean;
   studentData?: StudentData;
   startupData?: StartupData;
